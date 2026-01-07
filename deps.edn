@@ -1,0 +1,16 @@
+{
+ :paths     ["src/clj" "src/cljc" "src/cljs" "resources"]
+ :deps      {
+             com.cleancoders.c3kit/apron    {:git/url "https://github.com/cleancoders/c3kit-apron.git" :git/sha "44b3e6a5e541d78f5d99fd1089b74e8bf81d075f"}
+             org.clojure/clojure            {:mvn/version "1.11.1"}
+             org.clojure/math.combinatorics {:mvn/version "0.2.0"}
+             }
+ :aliases   {
+             :test     {:extra-deps  {
+                                      speclj/speclj                  {:mvn/version "3.4.5"}
+                                      }
+                        :extra-paths ["dev" "spec/clj" "spec/cljc" "spec/cljs"]}
+             :run      {:main-opts ["-m" "set.main"]}
+             :spec     {:main-opts ["-m" "speclj.main" "-c"]}
+             }
+ }
