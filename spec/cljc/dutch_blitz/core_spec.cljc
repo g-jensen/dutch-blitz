@@ -42,6 +42,7 @@
       (should= (map #(assoc % :player 1) deck)
                (sut/->deck 1))))
 
+  ; TODO - decouple these specs from implementation details
   (context "generating initial state"
     (it "for 2 players"
       (let [player-count 2
