@@ -165,18 +165,20 @@
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)
             empty-hand-state (add-to-wood-pile-until-empty-hand state player)]
-        (should (sut/cyclable? empty-hand-state player))
-        (should-not (sut/cyclable? empty-hand-state other-player))))
+        (should (sut/can-cycle-hand? empty-hand-state player))
+        (should-not (sut/can-cycle-hand? empty-hand-state other-player))))
 
     (it "is not cyclable before hand is empty"
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)
             hand-states (add-to-wood-pile-until-empty-hand-states state player)]
-        (should (every? not (map #(sut/cyclable? % player) hand-states)))
-        (should (every? not (map #(sut/cyclable? % other-player) hand-states)))))
+        (should (every? not (map #(sut/can-cycle-hand? % player) hand-states)))
+        (should (every? not (map #(sut/can-cycle-hand? % other-player) hand-states)))))
     )
 
-  ; add to wood pile, reset hand, cycle hand, move card to dutch pile,
+  ; add to wood pile (done)
+  ; reset hand, cycle hand (WIP)
+  ; move card to dutch pile
   ; move card to post pile
 
   )

@@ -86,5 +86,5 @@
       (take-3-from-hand player)
       (maybe-set-cyclable player)))
 
-(defn cyclable? [state player]
+(defn can-cycle-hand? [state player]
   (:cyclable? (player-state state player)))
