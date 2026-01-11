@@ -62,8 +62,17 @@
 (defn- take-3-from-hand [state player hand]
   (assoc-in state [:players player :hand] (drop 3 hand)))
 
+(defn- hand [state player]
+  (get-in state [:players player :hand]))
+
+(defn- maybe-set-cyclable [state player]
+  (if (empty? (hand state player))
+    (assoc-in state [:players player :cyclable?] true)
+    state))
+
 (defn add-to-wood-pile [state player]
   (let [hand (get-in state [:players player :hand])]
     (-> state
         (put-3-in-wood-pile player hand)
-        (take-3-from-hand player hand))))
+        (take-3-from-hand player hand)
+        (maybe-set-cyclable player))))

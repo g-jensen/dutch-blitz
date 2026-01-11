@@ -1,5 +1,6 @@
 (ns dutch-blitz.core-spec
-  (:require [speclj.core #?(:clj :refer :cljs :refer-macros) [around context describe it should= should-be-nil should-contain should should-not before with-stubs]]
+  (:require [c3kit.apron.corec :as ccc]
+            [speclj.core #?(:clj :refer :cljs :refer-macros) [focus-context around context describe it should= should-be-nil should-contain should should-not before with-stubs]]
             [dutch-blitz.core :as sut]))
 
 (defn- bad-shuffle [offset-atom coll]
@@ -15,6 +16,12 @@
    :blitz-pile (take 10 (drop 3 deck))
    :wood-pile  []
    :hand       (drop 13 deck)})
+
+(defn- has-hand? [state player]
+  (seq (get-in state [:players player :hand])))
+
+(defn- cyclable? [state player]
+  (:cyclable? (get (:players state) player)))
 
 (describe "Dutch Blitz"
 
@@ -83,56 +90,65 @@
     )
 
   (context "adding to wood-pile"
-           (it "adds to an empty wood-pile"
-               (let [player-count 2
-                     player 0
-                     state (sut/init player-count identity)
-                     hand (get-in state [:players player :hand])]
-                 (should= (-> state
-                              (assoc-in [:players player :wood-pile]
-                                        (reverse (take 3 hand)))
-                              (assoc-in [:players player :hand]
-                                        (drop 3 hand)))
-                          (sut/add-to-wood-pile state player))))
+    (it "adds to an empty wood-pile"
+      (let [player-count 2
+            player 0
+            state (sut/init player-count identity)
+            hand (get-in state [:players player :hand])]
+        (should= (-> state
+                     (assoc-in [:players player :wood-pile]
+                               (reverse (take 3 hand)))
+                     (assoc-in [:players player :hand]
+                               (drop 3 hand)))
+                 (sut/add-to-wood-pile state player))))
 
-           (it "adds to a non-empty wood-pile"
-               (let [player-count 2
-                     player 0
-                     state (-> (sut/init player-count identity)
-                               (sut/add-to-wood-pile player))
-                     wood-pile (get-in state [:players player :wood-pile])
-                     hand (get-in state [:players player :hand])]
-                 (should= (-> state
-                              (assoc-in [:players player :wood-pile]
-                                        (concat (reverse (take 3 hand))
-                                                wood-pile))
-                              (assoc-in [:players player :hand]
-                                        (drop 3 hand)))
-                          (sut/add-to-wood-pile state player))))
+    (it "adds to a non-empty wood-pile"
+      (let [player-count 2
+            player 0
+            state (-> (sut/init player-count identity)
+                      (sut/add-to-wood-pile player))
+            wood-pile (get-in state [:players player :wood-pile])
+            hand (get-in state [:players player :hand])]
+        (should= (-> state
+                     (assoc-in [:players player :wood-pile]
+                               (concat (reverse (take 3 hand))
+                                       wood-pile))
+                     (assoc-in [:players player :hand]
+                               (drop 3 hand)))
+                 (sut/add-to-wood-pile state player))))
 
-           (it "adds to specified player's pile"
-               (let [player-count 2
-                     player 1
-                     state (-> (sut/init player-count identity)
-                               (sut/add-to-wood-pile player))
-                     wood-pile (get-in state [:players player :wood-pile])
-                     hand (get-in state [:players player :hand])]
-                 (should= (-> state
-                              (assoc-in [:players player :wood-pile]
-                                        (concat (reverse (take 3 hand))
-                                                wood-pile))
-                              (assoc-in [:players player :hand]
-                                        (drop 3 hand)))
-                          (sut/add-to-wood-pile state player)))))
+    (it "adds to specified player's pile"
+      (let [player-count 2
+            player 1
+            state (-> (sut/init player-count identity)
+                      (sut/add-to-wood-pile player))
+            wood-pile (get-in state [:players player :wood-pile])
+            hand (get-in state [:players player :hand])]
+        (should= (-> state
+                     (assoc-in [:players player :wood-pile]
+                               (concat (reverse (take 3 hand))
+                                       wood-pile))
+                     (assoc-in [:players player :hand]
+                               (drop 3 hand)))
+                 (sut/add-to-wood-pile state player))))
+    )
 
-  #_(context "cyclable deck"
-             #_(it "isn't cyclable initially"
-                   (let [state (sut/init 2 identity)]
-                     (should-not (some identity (map :cyclable? (:players state))))))
+  (context "cyclable deck"
+    (it "is cyclable after going through your entire hand and not playing"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)
+            states (iterate #(sut/add-to-wood-pile % player) state)
+            empty-hand-state (first (drop-while #(has-hand? % player) states))]
+        (should (cyclable? empty-hand-state player))
+        (should-not (cyclable? empty-hand-state other-player))))
 
-             (it "is cyclable after going through your entire hand and not playing"
-                 (let [state (sut/init 2 identity)
-                       states (iterate #(sut/add-to-wood-pile % 0) state)
-                       empty-hand-state (first (drop-while #(seq (get-in % [:players 0 :hand])) states))])))
+    (it "isn't cyclable before hand is empty"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)
+            states (iterate #(sut/add-to-wood-pile % player) state)
+            hand-states (take-while #(has-hand? % player) states)]
+        (should (every? not (map #(cyclable? % player) hand-states)))
+        (should (every? not (map #(cyclable? % other-player) hand-states)))))
+    )
 
   )
