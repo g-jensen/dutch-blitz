@@ -160,7 +160,7 @@
                  (sut/add-to-wood-pile state player))))
     )
 
-  (context "cyclable player-state"
+  (context "cycle-hand"
     (it "is cyclable after going through your entire hand and not playing"
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)
@@ -177,7 +177,8 @@
     )
 
   ; add to wood pile (done)
-  ; reset hand, cycle hand (WIP)
+  ; reset hand
+  ; cycle hand (WIP)
   ; move card to dutch pile
   ; move card to post pile
 
