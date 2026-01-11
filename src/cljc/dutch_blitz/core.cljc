@@ -49,9 +49,19 @@
      :wood-pile  []
      :hand       hand}))
 
+(def ^:private invalid-state :invalid-state)
+
+(defn invalid-state? [state]
+  (= state invalid-state))
+
+(defn- maybe-invalid-player-count [player-count]
+  (when (or (< player-count 2) (> player-count 4))
+    invalid-state))
+
 (defn init [player-count shuffle-fn]
-  {:dutch-piles []
-   :players (mapv #(->player player-count shuffle-fn %) (range 0 player-count))})
+  (or (maybe-invalid-player-count player-count)
+      {:dutch-piles []
+       :players (mapv #(->player player-count shuffle-fn %) (range 0 player-count))}))
 
 (defn- hand-path [player]
   [:players player :hand])
@@ -80,11 +90,16 @@
     (assoc-in state [:players player :cyclable?] true)
     state))
 
+(defn- maybe-cannot-add-to-wood-pile [state player]
+  (when-not (can-add-to-wood-pile? state player)
+    invalid-state))
+
 (defn add-to-wood-pile [state player]
-  (-> state
-      (put-3-in-wood-pile player)
-      (take-3-from-hand player)
-      (maybe-set-cyclable player)))
+  (or (maybe-cannot-add-to-wood-pile state player)
+      (-> state
+          (put-3-in-wood-pile player)
+          (take-3-from-hand player)
+          (maybe-set-cyclable player))))
 
 (defn can-cycle-hand? [state player]
   (:cyclable? (player-state state player)))
