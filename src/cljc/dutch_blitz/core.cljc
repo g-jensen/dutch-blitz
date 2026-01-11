@@ -59,6 +59,9 @@
 (defn- hand [state player]
   (get-in state (hand-path player)))
 
+(defn can-add-to-wood-pile? [state player]
+  (boolean (seq (hand state player))))
+
 (defn- put-3-in-wood-pile [state player]
   (let [hand (hand state player)]
     (update-in

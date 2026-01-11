@@ -20,6 +20,17 @@
 (defn- has-hand? [state player]
   (seq (get-in state [:players player :hand])))
 
+(defn- add-to-wood-pile-states [state player]
+  (iterate #(sut/add-to-wood-pile % player) state))
+
+(defn- add-to-wood-pile-until-empty-hand [state player]
+  (let [states (add-to-wood-pile-states state player)]
+    (first (drop-while #(has-hand? % player) states))))
+
+(defn- add-to-wood-pile-until-empty-hand-states [state player]
+  (let [states (add-to-wood-pile-states state player)]
+    (take-while #(has-hand? % player) states)))
+
 (describe "Dutch Blitz"
 
   (it "has a deck"
@@ -87,6 +98,25 @@
     )
 
   (context "adding to wood-pile"
+    (it "can be added to initially"
+      (let [players [0 1]
+            state (sut/init (count players) identity)]
+        (should (every? true? (map #(sut/can-add-to-wood-pile? state %) players)))))
+
+    (it "can be added to while hand is not empty"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)
+            hand-states (add-to-wood-pile-until-empty-hand-states state player)]
+        (should (every? #(sut/can-add-to-wood-pile? % player) hand-states))
+        (should (every? #(sut/can-add-to-wood-pile? % other-player) hand-states))))
+
+    (it "cannot be added to if hand is empty"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)
+            empty-hand-state (add-to-wood-pile-until-empty-hand state player)]
+        (should-not (sut/can-add-to-wood-pile? empty-hand-state player))
+        (should (sut/can-add-to-wood-pile? empty-hand-state other-player))))
+
     (it "adds to an empty wood-pile"
       (let [player-count 2
             player 0
@@ -134,16 +164,14 @@
     (it "is cyclable after going through your entire hand and not playing"
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)
-            states (iterate #(sut/add-to-wood-pile % player) state)
-            empty-hand-state (first (drop-while #(has-hand? % player) states))]
+            empty-hand-state (add-to-wood-pile-until-empty-hand state player)]
         (should (sut/cyclable? empty-hand-state player))
         (should-not (sut/cyclable? empty-hand-state other-player))))
 
     (it "is not cyclable before hand is empty"
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)
-            states (iterate #(sut/add-to-wood-pile % player) state)
-            hand-states (take-while #(has-hand? % player) states)]
+            hand-states (add-to-wood-pile-until-empty-hand-states state player)]
         (should (every? not (map #(sut/cyclable? % player) hand-states)))
         (should (every? not (map #(sut/cyclable? % other-player) hand-states)))))
     )
