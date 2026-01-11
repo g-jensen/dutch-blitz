@@ -53,17 +53,24 @@
   {:dutch-piles []
    :players (mapv #(->player player-count shuffle-fn %) (range 0 player-count))})
 
-(defn- put-3-in-wood-pile [state player hand]
-  (update-in
-    state
-    [:players player :wood-pile]
-    #(concat (reverse (take 3 hand)) %)))
-
-(defn- take-3-from-hand [state player hand]
-  (assoc-in state [:players player :hand] (drop 3 hand)))
+(defn- hand-path [player]
+  [:players player :hand])
 
 (defn- hand [state player]
-  (get-in state [:players player :hand]))
+  (get-in state (hand-path player)))
+
+(defn- put-3-in-wood-pile [state player]
+  (let [hand (hand state player)]
+    (update-in
+      state
+      [:players player :wood-pile]
+      #(concat (reverse (take 3 hand)) %))))
+
+(defn- take-3-from-hand [state player]
+  (update-in state (hand-path player) #(drop 3 %)))
+
+(defn- player-state [state player]
+  (get (:players state) player))
 
 (defn- maybe-set-cyclable [state player]
   (if (empty? (hand state player))
@@ -71,11 +78,10 @@
     state))
 
 (defn add-to-wood-pile [state player]
-  (let [hand (get-in state [:players player :hand])]
-    (-> state
-        (put-3-in-wood-pile player hand)
-        (take-3-from-hand player hand)
-        (maybe-set-cyclable player))))
+  (-> state
+      (put-3-in-wood-pile player)
+      (take-3-from-hand player)
+      (maybe-set-cyclable player)))
 
 (defn cyclable? [state player]
-  (:cyclable? (get (:players state) player)))
+  (:cyclable? (player-state state player)))
