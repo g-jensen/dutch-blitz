@@ -8,37 +8,36 @@
         type (range 0 type-count)]
     {:player player :number n :type type}))
 
-(defn- piles [n deck]
-  (map #(vec [(nth deck %)]) (range 0 n)))
-
 (def two-player-post-pile-count 5)
 (def normal-post-pile-count 3)
 
-(defn- post-piles [player-count deck]
+(defn- post-pile-count [player-count]
   (if (= player-count 2)
-    (piles two-player-post-pile-count deck)
-    (piles normal-post-pile-count deck)))
+    two-player-post-pile-count
+    normal-post-pile-count))
 
-(defn- post-piles-rest [player-count deck]
-  (if (= player-count 2)
-    (drop two-player-post-pile-count deck)
-    (drop normal-post-pile-count deck)))
+(defn- initial-post-piles [post-pile-count deck]
+  (map #(vec [(nth deck %)]) (range 0 post-pile-count)))
+
+(defn- initial-post-piles-rest [post-pile-count deck]
+  (drop post-pile-count deck))
 
 (defn- build-post-piles [player-count deck]
-  [(post-piles player-count deck)
-   (post-piles-rest player-count deck)])
+  (let [post-pile-count (post-pile-count player-count)]
+    [(initial-post-piles post-pile-count deck)
+     (initial-post-piles-rest post-pile-count deck)]))
 
 (def initial-blitz-pile-size 10)
 
-(defn- blitz-pile [deck]
+(defn- initial-blitz-pile [deck]
   (take initial-blitz-pile-size deck))
 
-(defn- blitz-pile-rest [deck]
+(defn- initial-blitz-pile-rest [deck]
   (drop initial-blitz-pile-size deck))
 
 (defn- build-blitz-pile [deck]
-  [(blitz-pile deck)
-   (blitz-pile-rest deck)])
+  [(initial-blitz-pile deck)
+   (initial-blitz-pile-rest deck)])
 
 (defn- ->player [player-count shuffle-fn player]
   (let [hand (shuffle-fn (->deck player))
