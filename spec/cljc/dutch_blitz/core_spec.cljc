@@ -20,9 +20,6 @@
 (defn- has-hand? [state player]
   (seq (get-in state [:players player :hand])))
 
-(defn- cyclable? [state player]
-  (:cyclable? (get (:players state) player)))
-
 (describe "Dutch Blitz"
 
   (it "has a deck"
@@ -139,16 +136,16 @@
             state (sut/init (count players) identity)
             states (iterate #(sut/add-to-wood-pile % player) state)
             empty-hand-state (first (drop-while #(has-hand? % player) states))]
-        (should (cyclable? empty-hand-state player))
-        (should-not (cyclable? empty-hand-state other-player))))
+        (should (sut/cyclable? empty-hand-state player))
+        (should-not (sut/cyclable? empty-hand-state other-player))))
 
     (it "isn't cyclable before hand is empty"
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)
             states (iterate #(sut/add-to-wood-pile % player) state)
             hand-states (take-while #(has-hand? % player) states)]
-        (should (every? not (map #(cyclable? % player) hand-states)))
-        (should (every? not (map #(cyclable? % other-player) hand-states)))))
+        (should (every? not (map #(sut/cyclable? % player) hand-states)))
+        (should (every? not (map #(sut/cyclable? % other-player) hand-states)))))
     )
 
   )

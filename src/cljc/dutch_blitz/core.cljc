@@ -76,3 +76,6 @@
         (put-3-in-wood-pile player hand)
         (take-3-from-hand player hand)
         (maybe-set-cyclable player))))
+
+(defn cyclable? [state player]
+  (:cyclable? (get (:players state) player)))
