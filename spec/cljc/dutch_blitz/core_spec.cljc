@@ -177,10 +177,34 @@
                  (sut/add-to-wood-pile state player))))
     )
 
-  #_(context "resetting hand"
-    (it "is resettable"))
+  (context "resetting wood-pile"
+    (it "is not cyclable initially"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)]
+        (should-not (sut/can-reset-wood-pile? state player))
+        (should-not (sut/can-reset-wood-pile? state other-player))))
+
+    (it "is resettable if hand is empty"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)
+            empty-hand-state (add-to-wood-pile-until-empty-hand state player)]
+        (should (sut/can-reset-wood-pile? empty-hand-state player))
+        (should-not (sut/can-reset-wood-pile? empty-hand-state other-player))))
+
+    (it "is not cyclable before hand is empty"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)
+            hand-states (add-to-wood-pile-until-empty-hand-states state player)]
+        (should (every? not (map #(sut/can-reset-wood-pile? % player) hand-states)))
+        (should (every? not (map #(sut/can-reset-wood-pile? % other-player) hand-states))))))
 
   (context "cycling hand"
+    (it "is not cyclable initially"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)]
+        (should-not (sut/can-cycle-hand? state player))
+        (should-not (sut/can-cycle-hand? state other-player))))
+
     (it "is cyclable after going through your entire hand and not playing"
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)

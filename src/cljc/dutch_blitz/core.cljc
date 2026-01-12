@@ -100,5 +100,8 @@
           (take-3-from-hand player)
           (maybe-set-cyclable player))))
 
+(defn can-reset-wood-pile? [state player]
+  (empty? (hand state player)))
+
 (defn can-cycle-hand? [state player]
   (:cyclable? (player-state state player)))
