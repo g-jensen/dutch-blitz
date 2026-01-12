@@ -110,30 +110,6 @@
     )
 
   (context "adding to wood-pile"
-    (it "can be added to initially"
-      (let [[player other-player :as players] [0 1]
-            state (sut/init (count players) identity)]
-        (should (every? true? (map #(sut/can-add-to-wood-pile? state %) players)))
-        (should-not (sut/invalid-state? (sut/add-to-wood-pile state player)))
-        (should-not (sut/invalid-state? (sut/add-to-wood-pile state other-player)))))
-
-    (it "can be added to while hand is not empty"
-      (let [[player other-player :as players] [0 1]
-            state (sut/init (count players) identity)
-            hand-states (add-to-wood-pile-until-empty-hand-states state player)]
-        (should (every? #(sut/can-add-to-wood-pile? % player) hand-states))
-        (should (every? #(sut/can-add-to-wood-pile? % other-player) hand-states))
-        (should (not-any? #(sut/invalid-state? %) hand-states))))
-
-    (it "cannot be added to if hand is empty"
-      (let [[player other-player :as players] [0 1]
-            state (sut/init (count players) identity)
-            empty-hand-state (add-to-wood-pile-until-empty-hand state player)]
-        (should-not (sut/can-add-to-wood-pile? empty-hand-state player))
-        (should (sut/can-add-to-wood-pile? empty-hand-state other-player))
-        (should (sut/invalid-state? (sut/add-to-wood-pile empty-hand-state player)))
-        (should-not (sut/invalid-state? (sut/add-to-wood-pile empty-hand-state other-player)))))
-
     (it "adds to an empty wood-pile"
       (let [player-count 2
             player 0
@@ -178,25 +154,22 @@
     )
 
   (context "resetting wood-pile"
-    (it "is not cyclable initially"
-      (let [[player other-player :as players] [0 1]
+    (it "moves wood-pile back to hand"
+      (let [[player :as players] [0 1]
+            state (sut/init (count players) identity)
+            empty-hand-state (add-to-wood-pile-until-empty-hand state player)
+            reset-state (sut/reset-wood-pile empty-hand-state player)
+            old-wood-pile (get-in empty-hand-state [:players player :wood-pile])]
+        (should= (reverse old-wood-pile)
+                 (get-in reset-state [:players player :hand]))
+        (should= [] (get-in reset-state [:players player :wood-pile]))))
+
+    (it "can not reset if hand is not empty"
+      (let [[player :as players] [0 1]
             state (sut/init (count players) identity)]
-        (should-not (sut/can-reset-wood-pile? state player))
-        (should-not (sut/can-reset-wood-pile? state other-player))))
+        (should (sut/invalid-state? (sut/reset-wood-pile state player)))))
 
-    (it "is resettable if hand is empty"
-      (let [[player other-player :as players] [0 1]
-            state (sut/init (count players) identity)
-            empty-hand-state (add-to-wood-pile-until-empty-hand state player)]
-        (should (sut/can-reset-wood-pile? empty-hand-state player))
-        (should-not (sut/can-reset-wood-pile? empty-hand-state other-player))))
-
-    (it "is not cyclable before hand is empty"
-      (let [[player other-player :as players] [0 1]
-            state (sut/init (count players) identity)
-            hand-states (add-to-wood-pile-until-empty-hand-states state player)]
-        (should (every? not (map #(sut/can-reset-wood-pile? % player) hand-states)))
-        (should (every? not (map #(sut/can-reset-wood-pile? % other-player) hand-states))))))
+    )
 
   (context "cycling hand"
     (it "is not cyclable initially"
@@ -221,7 +194,7 @@
     )
 
   ; add to wood pile (done - may need to add rule for when 1 or 2 cards are left in hand)
-  ; reset hand
+  ; reset hand (mostly done - want to require reset before cycling)
   ; cycle hand (WIP)
   ; move card to dutch pile
   ; move card to post pile

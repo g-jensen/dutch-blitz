@@ -68,14 +68,17 @@
 (defn- hand [state player]
   (get-in state (hand-path player)))
 
-(defn can-add-to-wood-pile? [state player]
+(defn- can-add-to-wood-pile? [state player]
   (boolean (seq (hand state player))))
+
+(defn- wood-pile-path [player]
+  [:players player :wood-pile])
 
 (defn- put-3-in-wood-pile [state player]
   (let [hand (hand state player)]
     (update-in
       state
-      [:players player :wood-pile]
+      (wood-pile-path player)
       #(concat (reverse (take 3 hand)) %))))
 
 (defn- take-3-from-hand [state player]
@@ -100,8 +103,28 @@
           (take-3-from-hand player)
           (maybe-set-cyclable player))))
 
-(defn can-reset-wood-pile? [state player]
+(defn- can-reset-wood-pile? [state player]
   (empty? (hand state player)))
+
+(defn- wood-pile [state player]
+  (get-in state (wood-pile-path player)))
+
+(defn- replenish-hand [state player]
+  (let [wood-pile (wood-pile state player)]
+    (assoc-in state (hand-path player) (reverse wood-pile))))
+
+(defn- clear-wood-pile [state player]
+  (assoc-in state (wood-pile-path player) []))
+
+(defn- maybe-cannot-reset-wood-pile [state player]
+  (when-not (can-reset-wood-pile? state player)
+    invalid-state))
+
+(defn reset-wood-pile [state player]
+  (or (maybe-cannot-reset-wood-pile state player)
+      (-> state
+          (replenish-hand player)
+          (clear-wood-pile player))))
 
 (defn can-cycle-hand? [state player]
   (:cyclable? (player-state state player)))
