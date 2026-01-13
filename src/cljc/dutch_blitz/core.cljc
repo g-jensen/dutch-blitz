@@ -87,11 +87,6 @@
 (defn- player-state [state player]
   (get (:players state) player))
 
-(defn- maybe-set-cyclable [state player]
-  (if (empty? (hand state player))
-    (assoc-in state [:players player :cyclable?] true)
-    state))
-
 (defn- maybe-cannot-add-to-wood-pile [state player]
   (when-not (can-add-to-wood-pile? state player)
     invalid-state))
@@ -100,8 +95,7 @@
   (or (maybe-cannot-add-to-wood-pile state player)
       (-> state
           (put-3-in-wood-pile player)
-          (take-3-from-hand player)
-          (maybe-set-cyclable player))))
+          (take-3-from-hand player))))
 
 (defn- can-reset-wood-pile? [state player]
   (empty? (hand state player)))
@@ -120,11 +114,15 @@
   (when-not (can-reset-wood-pile? state player)
     invalid-state))
 
+(defn- mark-cyclable [state player]
+   (assoc-in state [:players player :cyclable?] true))
+
 (defn reset-wood-pile [state player]
   (or (maybe-cannot-reset-wood-pile state player)
       (-> state
           (replenish-hand player)
-          (clear-wood-pile player))))
+          (clear-wood-pile player)
+          (mark-cyclable player))))
 
 (defn can-cycle-hand? [state player]
   (:cyclable? (player-state state player)))

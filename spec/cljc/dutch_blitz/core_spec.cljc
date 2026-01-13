@@ -178,12 +178,20 @@
         (should-not (sut/can-cycle-hand? state player))
         (should-not (sut/can-cycle-hand? state other-player))))
 
-    (it "is cyclable after going through your entire hand and not playing"
+    (it "is not cyclable after going through your entire hand without resetting"
       (let [[player other-player :as players] [0 1]
             state (sut/init (count players) identity)
             empty-hand-state (add-to-wood-pile-until-empty-hand state player)]
-        (should (sut/can-cycle-hand? empty-hand-state player))
+        (should-not (sut/can-cycle-hand? empty-hand-state player))
         (should-not (sut/can-cycle-hand? empty-hand-state other-player))))
+
+    (it "is cyclable only directly after resetting"
+      (let [[player other-player :as players] [0 1]
+            state (sut/init (count players) identity)
+            empty-hand-state (add-to-wood-pile-until-empty-hand state player)
+            reset-state (sut/reset-wood-pile empty-hand-state player)]
+        (should (sut/can-cycle-hand? reset-state player))
+        (should-not (sut/can-cycle-hand? reset-state other-player))))
 
     (it "is not cyclable before hand is empty"
       (let [[player other-player :as players] [0 1]
