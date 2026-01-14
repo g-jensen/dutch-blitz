@@ -31,6 +31,15 @@
   (let [states (add-to-wood-pile-states state player)]
     (take-while #(has-hand? % player) states)))
 
+(defn- ->card [number type player]
+  {:number number :type type :player player})
+
+(defn- with-blitz-pile [state player cards]
+  (assoc-in state [:players player :blitz-pile] cards))
+
+(defn- with-dutch-piles [state piles]
+  (assoc-in state [:dutch-piles] piles))
+
 (describe "Dutch Blitz"
 
   (it "has a deck"
@@ -50,7 +59,7 @@
             new-shuffle-fn (partial bad-shuffle (atom 1))
             deck-0 (shuffle-fn (sut/->deck 0))
             deck-1 (shuffle-fn (sut/->deck 1))]
-        (should= {:dutch-piles []
+        (should= {:dutch-piles (repeat 8 [])
                   :players     [{:post-piles [[(nth deck-0 0)]
                                               [(nth deck-0 1)]
                                               [(nth deck-0 2)]
@@ -76,7 +85,7 @@
             deck-0 (shuffle-fn (sut/->deck 0))
             deck-1 (shuffle-fn (sut/->deck 1))
             deck-2 (shuffle-fn (sut/->deck 2))]
-        (should= {:dutch-piles []
+        (should= {:dutch-piles (repeat 12 [])
                   :players     [(->three-pile-player deck-0)
                                 (->three-pile-player deck-1)
                                 (->three-pile-player deck-2)]}
@@ -90,7 +99,7 @@
             deck-1 (shuffle-fn (sut/->deck 1))
             deck-2 (shuffle-fn (sut/->deck 2))
             deck-3 (shuffle-fn (sut/->deck 3))]
-        (should= {:dutch-piles []
+        (should= {:dutch-piles (repeat 16 [])
                   :players     [(->three-pile-player deck-0)
                                 (->three-pile-player deck-1)
                                 (->three-pile-player deck-2)
@@ -201,10 +210,82 @@
         (should (every? not (map #(sut/can-cycle-hand? % other-player) hand-states)))))
     )
 
+  (context "moving blitz card to dutch pile"
+    (it "creates new dutch pile from single card in blitz pile"
+      (let [player 0
+            card (->card 1 0 player)
+            state (-> (sut/init 2 identity) (with-blitz-pile player [card]))
+            result (sut/move-blitz->dutch state player 0)]
+        (should= [] (get-in result [:players player :blitz-pile]))
+        (should= [[card] [] [] [] [] [] [] []] (:dutch-piles result))))
+
+    (it "removes only top card from blitz pile"
+      (let [player 0
+            card-1 (->card 1 0 player)
+            card-2 (->card 2 1 player)
+            card-3 (->card 3 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-blitz-pile player [card-1 card-2 card-3]))
+            result (sut/move-blitz->dutch state player 0)]
+        (should= [card-2 card-3] (get-in result [:players player :blitz-pile]))
+        (should= [[card-1] [] [] [] [] [] [] []] (:dutch-piles result))))
+
+    (it "adds to second dutch pile"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 1 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card] []])
+                      (with-blitz-pile player [new-card]))
+            result (sut/move-blitz->dutch state player 1)]
+        (should= [] (get-in result [:players player :blitz-pile]))
+        (should= [[existing-card] [new-card]] (:dutch-piles result))))
+
+    (it "adds consecutive card to dutch pile"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 2 0 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card]])
+                      (with-blitz-pile player [new-card]))
+            result (sut/move-blitz->dutch state player 0)]
+        (should= [] (get-in result [:players player :blitz-pile]))
+        (should= [[new-card existing-card]] (:dutch-piles result))))
+
+    (it "returns invalid state if first card is not a 1"
+      (let [player 0
+            new-card (->card 2 0 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[]])
+                      (with-blitz-pile player [new-card]))
+            result (sut/move-blitz->dutch state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if new card is not the same color as top card"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 2 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card]])
+                      (with-blitz-pile player [new-card]))
+            result (sut/move-blitz->dutch state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if cards are out of order"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 3 0 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card]])
+                      (with-blitz-pile player [new-card]))
+            result (sut/move-blitz->dutch state player 0)]
+        (should (sut/invalid-state? result))))
+     )
+
   ; add to wood pile (done - may need to add rule for when 1 or 2 cards are left in hand)
-  ; reset hand (mostly done - want to require reset before cycling)
+  ; reset hand (done)
   ; cycle hand (WIP)
-  ; move card to dutch pile
+  ; move card to dutch pile (WIP)
   ; move card to post pile
 
   )

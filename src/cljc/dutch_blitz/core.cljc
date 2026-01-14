@@ -59,7 +59,7 @@
 
 (defn init [player-count shuffle-fn]
   (or (maybe-invalid-player-count player-count)
-      {:dutch-piles []
+      {:dutch-piles (vec (repeat (* type-count player-count) []))
        :players (mapv #(->player player-count shuffle-fn %) (range 0 player-count))}))
 
 (defn- hand-path [player]
@@ -126,3 +126,50 @@
 
 (defn can-cycle-hand? [state player]
   (:cyclable? (player-state state player)))
+
+(defn- blitz-pile-path [player]
+  [:players player :blitz-pile])
+
+(defn- blitz-pile [state player]
+   (get-in state (blitz-pile-path player)))
+
+(defn- top-card [pile]
+   (first pile))
+
+(defn- remove-top-from-blitz [state player]
+   (let [new-blitz-pile (vec (rest (blitz-pile state player)))]
+     (assoc-in state (blitz-pile-path player) new-blitz-pile)))
+
+(defn- add-dutch-pile [state player pile-index]
+  (let [blitz (blitz-pile state player)
+        card (top-card blitz)]
+    (update-in state [:dutch-piles pile-index] #(cons card %))))
+
+(defn- dutch-pile [state pile-index]
+  (get-in state [:dutch-piles pile-index]))
+
+(defn- same-type? [card1 card2]
+  (= (:type card1) (:type card2)))
+
+(defn- consecutive-cards? [c1 c2]
+  (= (inc (:number c1)) (:number c2)))
+
+(defn- one-card? [card]
+  (= 1 (:number card)))
+
+(defn- valid-dutch-placement? [old-card new-card]
+  (if old-card
+    (and (same-type? old-card new-card) (consecutive-cards? old-card new-card))
+    (one-card? new-card)))
+
+(defn- maybe-invalid-dutch-placement [state player dutch-index]
+  (let [top-blitz (top-card (blitz-pile state player))
+        top-dutch (top-card (dutch-pile state dutch-index))]
+    (when-not (valid-dutch-placement? top-dutch top-blitz)
+      invalid-state)))
+
+(defn move-blitz->dutch [state player dutch-index]
+  (or (maybe-invalid-dutch-placement state player dutch-index)
+      (-> state
+          (add-dutch-pile player dutch-index)
+          (remove-top-from-blitz player))))
