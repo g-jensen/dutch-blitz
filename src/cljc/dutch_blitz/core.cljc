@@ -220,3 +220,65 @@
       (-> state
           (add-wood-to-dutch-pile player dutch-index)
           (remove-top-from-wood player))))
+
+(defn- add-blitz-to-post [state player post-index]
+  (let [card (top-card (blitz-pile state player))]
+    (update-in state (post-pile-path player post-index) #(cons card %))))
+
+(defn- boy? [card]
+  (even? (:type card)))
+
+(defn- alternating-boy-girl? [existing-card new-card]
+  (not= (boy? existing-card) (boy? new-card)))
+
+(defn- valid-post-placement? [existing-card new-card]
+  (or (nil? existing-card)
+      (and (alternating-boy-girl? existing-card new-card)
+           (consecutive-cards? new-card existing-card))))
+
+(defn- maybe-invalid-blitz-post-placement [state player post-index]
+  (let [top-blitz (top-card (blitz-pile state player))
+        top-post (top-card (post-pile state player post-index))]
+    (when (or (nil? top-blitz)
+              (not (valid-post-placement? top-post top-blitz)))
+      invalid-state)))
+
+(defn move-blitz->post [state player post-index]
+  (or (maybe-invalid-blitz-post-placement state player post-index)
+      (-> state
+          (add-blitz-to-post player post-index)
+          (remove-top-from-blitz player))))
+
+(defn- add-wood-to-post [state player post-index]
+  (let [card (top-card (wood-pile state player))]
+    (update-in state (post-pile-path player post-index) #(cons card %))))
+
+(defn- maybe-invalid-wood-pile-post-placement [state player post-index]
+  (let [top-wood (top-card (wood-pile state player))
+        top-post (top-card (post-pile state player post-index))]
+    (when (or (nil? top-wood)
+              (not (valid-post-placement? top-post top-wood)))
+      invalid-state)))
+
+(defn move-wood-pile->post [state player post-index]
+  (or (maybe-invalid-wood-pile-post-placement state player post-index)
+      (-> state
+          (add-wood-to-post player post-index)
+          (remove-top-from-wood player))))
+
+(defn- add-post-to-post [state player source-index target-index]
+  (let [card (top-card (post-pile state player source-index))]
+    (update-in state (post-pile-path player target-index) #(cons card %))))
+
+(defn- maybe-invalid-post-post-placement [state player source-index target-index]
+  (let [source-card (top-card (post-pile state player source-index))
+        target-card (top-card (post-pile state player target-index))]
+    (when (or (nil? source-card)
+              (not (valid-post-placement? target-card source-card)))
+      invalid-state)))
+
+(defn move-post->post [state player source-index target-index]
+  (or (maybe-invalid-post-post-placement state player source-index target-index)
+      (-> state
+          (add-post-to-post player source-index target-index)
+          (remove-top-from-post player source-index))))

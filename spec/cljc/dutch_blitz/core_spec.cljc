@@ -477,10 +477,149 @@
         (should (sut/invalid-state? result))))
     )
 
+  (context "moving blitz card to post pile"
+    (it "moves card to empty post pile"
+      (let [player 0
+            card (->card 5 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-blitz-pile player [card])
+                      (with-post-piles player [[] [] [] [] []]))
+            result (sut/move-blitz->post state player 0)]
+        (should= [] (get-in result [:players player :blitz-pile]))
+        (should= [[card] [] [] [] []] (get-in result [:players player :post-piles]))))
+
+    (it "returns invalid state if not alternating boy/girl"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 4 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-blitz-pile player [new-card])
+                      (with-post-piles player [[existing-card] [] [] [] []]))
+            result (sut/move-blitz->post state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if not consecutive-decreasing"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 3 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-blitz-pile player [new-card])
+                      (with-post-piles player [[existing-card] [] [] [] []]))
+            result (sut/move-blitz->post state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if blitz pile is empty"
+      (let [player 0
+            state (-> (sut/init 2 identity)
+                      (with-blitz-pile player [])
+                      (with-post-piles player [[] [] [] [] []]))
+            result (sut/move-blitz->post state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "moves card with valid placement (descending, alternating boy/girl)"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 4 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-blitz-pile player [new-card])
+                      (with-post-piles player [[existing-card] [] [] [] []]))
+            result (sut/move-blitz->post state player 0)]
+        (should-not (sut/invalid-state? result))
+        (should= [] (get-in result [:players player :blitz-pile]))
+        (should= [[new-card existing-card] [] [] [] []] (get-in result [:players player :post-piles]))))
+    )
+
+  (context "moving wood pile card to post pile"
+    (it "moves card to empty post pile"
+      (let [player 0
+            card (->card 5 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-wood-pile player [card])
+                      (with-post-piles player [[] [] [] [] []]))
+            result (sut/move-wood-pile->post state player 0)]
+        (should= [] (get-in result [:players player :wood-pile]))
+        (should= [[card] [] [] [] []] (get-in result [:players player :post-piles]))))
+
+    (it "returns invalid state if not alternating boy/girl"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 4 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-wood-pile player [new-card])
+                      (with-post-piles player [[existing-card] [] [] [] []]))
+            result (sut/move-wood-pile->post state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if not descending"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 3 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-wood-pile player [new-card])
+                      (with-post-piles player [[existing-card] [] [] [] []]))
+            result (sut/move-wood-pile->post state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if wood pile is empty"
+      (let [player 0
+            state (-> (sut/init 2 identity)
+                      (with-wood-pile player [])
+                      (with-post-piles player [[] [] [] [] []]))
+            result (sut/move-wood-pile->post state player 0)]
+        (should (sut/invalid-state? result))))
+    )
+
+  (context "moving post pile card to another post pile"
+    (it "moves card to empty post pile"
+      (let [player 0
+            card (->card 5 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-post-piles player [[card] [] [] [] []]))
+            result (sut/move-post->post state player 0 1)]
+        (should= [] (get-in result [:players player :post-piles 0]))
+        (should= [card] (get-in result [:players player :post-piles 1]))))
+
+    (it "returns invalid state if not alternating boy/girl"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 4 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-post-piles player [[new-card] [existing-card] [] [] []]))
+            result (sut/move-post->post state player 0 1)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if not descending"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 3 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-post-piles player [[new-card] [existing-card] [] [] []]))
+            result (sut/move-post->post state player 0 1)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if source post pile is empty"
+      (let [player 0
+            state (-> (sut/init 2 identity)
+                      (with-post-piles player [[] [] [] [] []]))
+            result (sut/move-post->post state player 0 1)]
+        (should (sut/invalid-state? result))))
+
+    (it "moves card with valid placement (descending, alternating boy/girl)"
+      (let [player 0
+            existing-card (->card 5 0 player)
+            new-card (->card 4 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-post-piles player [[new-card] [existing-card] [] [] []]))
+            result (sut/move-post->post state player 0 1)]
+        (should-not (sut/invalid-state? result))
+        (should= [] (get-in result [:players player :post-piles 0]))
+        (should= [new-card existing-card] (get-in result [:players player :post-piles 1]))))
+    )
+
   ; add to wood pile (done - may need to add rule for when 1 or 2 cards are left in hand)
   ; reset hand (done)
   ; cycle hand (WIP)
-  ; move card to dutch pile (WIP)
-  ; move card to post pile
+  ; move card to dutch pile (done)
+  ; move card to post pile (done)
 
   )
