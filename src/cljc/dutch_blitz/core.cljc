@@ -127,6 +127,12 @@
 (defn can-cycle-hand? [state player]
   (:cyclable? (player-state state player)))
 
+(defn- post-pile-path [player post-index]
+  [:players player :post-piles post-index])
+
+(defn- post-pile [state player post-index]
+  (get-in state (post-pile-path player post-index)))
+
 (defn- blitz-pile-path [player]
   [:players player :blitz-pile])
 
@@ -144,6 +150,14 @@
   (let [blitz (blitz-pile state player)
         card (top-card blitz)]
     (update-in state [:dutch-piles pile-index] #(cons card %))))
+
+(defn- add-card-to-dutch [state player post-index dutch-index]
+  (let [card (top-card (post-pile state player post-index))]
+    (update-in state [:dutch-piles dutch-index] #(cons card %))))
+
+(defn- remove-top-from-post [state player post-index]
+  (let [rest-pile (vec (rest (post-pile state player post-index)))]
+    (assoc-in state (post-pile-path player post-index) rest-pile)))
 
 (defn- dutch-pile [state pile-index]
   (get-in state [:dutch-piles pile-index]))
@@ -173,3 +187,15 @@
       (-> state
           (add-dutch-pile player dutch-index)
           (remove-top-from-blitz player))))
+
+(defn- maybe-invalid-post-dutch-placement [state player post-index dutch-index]
+  (let [top-post (top-card (post-pile state player post-index))
+        top-dutch (top-card (dutch-pile state dutch-index))]
+    (when-not (valid-dutch-placement? top-dutch top-post)
+      invalid-state)))
+
+(defn move-post->dutch [state player post-index dutch-index]
+  (or (maybe-invalid-post-dutch-placement state player post-index dutch-index)
+      (-> state
+          (add-card-to-dutch player post-index dutch-index)
+          (remove-top-from-post player post-index))))
