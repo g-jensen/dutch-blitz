@@ -146,7 +146,7 @@
    (let [new-blitz-pile (vec (rest (blitz-pile state player)))]
      (assoc-in state (blitz-pile-path player) new-blitz-pile)))
 
-(defn- add-dutch-pile [state player pile-index]
+(defn- add-blitz-to-dutch-pile [state player pile-index]
   (let [blitz (blitz-pile state player)
         card (top-card blitz)]
     (update-in state [:dutch-piles pile-index] #(cons card %))))
@@ -176,16 +176,16 @@
     (and (same-type? old-card new-card) (consecutive-cards? old-card new-card))
     (one-card? new-card)))
 
-(defn- maybe-invalid-dutch-placement [state player dutch-index]
+(defn- maybe-invalid-blitz-dutch-placement [state player dutch-index]
   (let [top-blitz (top-card (blitz-pile state player))
         top-dutch (top-card (dutch-pile state dutch-index))]
     (when-not (valid-dutch-placement? top-dutch top-blitz)
       invalid-state)))
 
 (defn move-blitz->dutch [state player dutch-index]
-  (or (maybe-invalid-dutch-placement state player dutch-index)
+  (or (maybe-invalid-blitz-dutch-placement state player dutch-index)
       (-> state
-          (add-dutch-pile player dutch-index)
+          (add-blitz-to-dutch-pile player dutch-index)
           (remove-top-from-blitz player))))
 
 (defn- maybe-invalid-post-dutch-placement [state player post-index dutch-index]
@@ -199,3 +199,24 @@
       (-> state
           (add-card-to-dutch player post-index dutch-index)
           (remove-top-from-post player post-index))))
+
+(defn- maybe-invalid-wood-pile-dutch-placement [state player dutch-index]
+  (let [top-wood  (top-card (wood-pile state player))
+        top-dutch (top-card (dutch-pile state dutch-index))]
+    (when-not (valid-dutch-placement? top-dutch top-wood)
+      invalid-state)))
+
+(defn- remove-top-from-wood [state player]
+  (let [new-blitz-pile (vec (rest (wood-pile state player)))]
+    (assoc-in state (wood-pile-path player) new-blitz-pile)))
+
+(defn- add-wood-to-dutch-pile [state player pile-index]
+  (let [wood (wood-pile state player)
+        card (top-card wood)]
+    (update-in state [:dutch-piles pile-index] #(cons card %))))
+
+(defn move-wood-pile->dutch [state player dutch-index]
+  (or (maybe-invalid-wood-pile-dutch-placement state player dutch-index)
+      (-> state
+          (add-wood-to-dutch-pile player dutch-index)
+          (remove-top-from-wood player))))

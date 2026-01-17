@@ -43,6 +43,9 @@
 (defn- with-dutch-piles [state piles]
   (assoc-in state [:dutch-piles] piles))
 
+(defn- with-wood-pile [state player pile]
+  (assoc-in state [:players player :wood-pile] pile))
+
 (describe "Dutch Blitz"
 
   (it "has a deck"
@@ -392,6 +395,86 @@
         (should= [[] [] [] [] []] (get-in result [:players player-1 :post-piles]))
         (should= player-0-post-piles (get-in result [:players player-0 :post-piles]))
         (should= [[card] [] [] [] [] [] [] []] (:dutch-piles result))))
+    )
+
+  (context "moving wood pile card to dutch pile"
+    (it "creates new dutch pile from single card in wood pile"
+      (let [player 0
+            card (->card 1 0 player)
+            state (-> (sut/init 2 identity) (with-wood-pile player [card]))
+            result (sut/move-wood-pile->dutch state player 0)]
+        (should= [] (get-in result [:players player :wood-pile]))
+        (should= [[card] [] [] [] [] [] [] []] (:dutch-piles result))))
+
+    (it "removes only top card from wood pile"
+      (let [player 0
+            card-1 (->card 1 0 player)
+            card-2 (->card 2 1 player)
+            card-3 (->card 3 2 player)
+            state (-> (sut/init 2 identity)
+                      (with-wood-pile player [card-1 card-2 card-3]))
+            result (sut/move-wood-pile->dutch state player 0)]
+        (should= [card-2 card-3] (get-in result [:players player :wood-pile]))
+        (should= [[card-1] [] [] [] [] [] [] []] (:dutch-piles result))))
+
+    (it "adds to second dutch pile"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 1 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card] []])
+                      (with-wood-pile player [new-card]))
+            result (sut/move-wood-pile->dutch state player 1)]
+        (should= [] (get-in result [:players player :wood-pile]))
+        (should= [[existing-card] [new-card]] (:dutch-piles result))))
+
+    (it "adds consecutive card to dutch pile"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 2 0 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card]])
+                      (with-wood-pile player [new-card]))
+            result (sut/move-wood-pile->dutch state player 0)]
+        (should= [] (get-in result [:players player :wood-pile]))
+        (should= [[new-card existing-card]] (:dutch-piles result))))
+
+    (it "returns invalid state if first card is not a 1"
+      (let [player 0
+            new-card (->card 2 0 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[]])
+                      (with-wood-pile player [new-card]))
+            result (sut/move-wood-pile->dutch state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if new card is not the same color as top card"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 2 1 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card]])
+                      (with-wood-pile player [new-card]))
+            result (sut/move-wood-pile->dutch state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if cards are out of order"
+      (let [player 0
+            existing-card (->card 1 0 player)
+            new-card (->card 3 0 player)
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[existing-card]])
+                      (with-wood-pile player [new-card]))
+            result (sut/move-wood-pile->dutch state player 0)]
+        (should (sut/invalid-state? result))))
+
+    (it "returns invalid state if blitz pile is empty"
+      (let [player 0
+            state (-> (sut/init 2 identity)
+                      (with-dutch-piles [[]])
+                      (with-wood-pile player []))
+            result (sut/move-wood-pile->dutch state player 0)]
+        (should (sut/invalid-state? result))))
     )
 
   ; add to wood pile (done - may need to add rule for when 1 or 2 cards are left in hand)
