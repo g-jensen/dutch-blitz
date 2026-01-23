@@ -32,14 +32,30 @@ func postPileCountForPlayers(playerCount int) int {
 	return 3
 }
 
+func topCard(pile []game.Card) game.Card {
+	return pile[len(pile)-1]
+}
+
+func cardsAreConsecutive(card1 game.Card, card2 game.Card) bool {
+	return card1.Number+1 == card2.Number
+}
+
+func colorsMatch(card1 game.Card, card2 game.Card) bool {
+	return card1.Color == card2.Color
+}
+
 func validateDutchMove(card game.Card, dutchPile []game.Card) error {
 	if len(dutchPile) == 0 && card.Number != 1 {
 		return errors.New("must play 1 to empty pile")
 	}
-	if len(dutchPile) > 0 && card.Number != dutchPile[len(dutchPile)-1].Number+1 {
+	if len(dutchPile) == 0 {
+		return nil
+	}
+	topCard := topCard(dutchPile)
+	if !cardsAreConsecutive(topCard, card) {
 		return errors.New("card must be next consecutive number")
 	}
-	if len(dutchPile) > 0 && card.Color != dutchPile[len(dutchPile)-1].Color {
+	if !colorsMatch(card, topCard) {
 		return errors.New("card color must match pile")
 	}
 	return nil
@@ -166,11 +182,19 @@ func WoodPileToDutch(g game.Game, player game.Player, dutchIndex int) error {
 	return nil
 }
 
+func colorsAreAlternating(card1 game.Card, card2 game.Card) bool {
+	return card1.Color%2 == card2.Color%2
+}
+
 func validatePostMove(card game.Card, postPile []game.Card) error {
-	if len(postPile) > 0 && card.Number != postPile[len(postPile)-1].Number-1 {
+	if len(postPile) == 0 {
+		return nil
+	}
+	topCard := topCard(postPile)
+	if !cardsAreConsecutive(topCard, card) {
 		return errors.New("card must be next descending number")
 	}
-	if len(postPile) > 0 && card.Color%2 == postPile[len(postPile)-1].Color%2 {
+	if !colorsAreAlternating(card, topCard) {
 		return errors.New("colors must alternate")
 	}
 	return nil
