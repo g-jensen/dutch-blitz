@@ -32,7 +32,10 @@ func postPileCountForPlayers(playerCount int) int {
 	return 3
 }
 
-func topCard(pile []game.Card) game.Card {
+func TopCard(pile []game.Card) game.Card {
+	if len(pile) == 0 {
+		return game.Card{}
+	}
 	return pile[len(pile)-1]
 }
 
@@ -51,11 +54,11 @@ func validateDutchMove(card game.Card, dutchPile []game.Card) error {
 	if len(dutchPile) == 0 {
 		return nil
 	}
-	topCard := topCard(dutchPile)
-	if !cardsAreConsecutive(topCard, card) {
+	TopCard := TopCard(dutchPile)
+	if !cardsAreConsecutive(TopCard, card) {
 		return errors.New("card must be next consecutive number")
 	}
-	if !colorsMatch(card, topCard) {
+	if !colorsMatch(card, TopCard) {
 		return errors.New("card color must match pile")
 	}
 	return nil
@@ -85,7 +88,7 @@ func Setup(g game.Game, playerCount int, shuffleFn func([]game.Card) []game.Card
 	return nil
 }
 
-func AddToWoodPile(g game.Game, player game.Player) error {
+func AddToWoodPile(g game.Game, player game.Player) {
 	hand := g.Hand(player)
 	count := min(3, len(hand))
 	toMove := hand[:count]
@@ -94,7 +97,6 @@ func AddToWoodPile(g game.Game, player game.Player) error {
 	newWood := append(wood, toMove...)
 	g.SetWoodPile(player, newWood)
 	g.SetHand(player, remaining)
-	return nil
 }
 
 func ResetWoodPile(g game.Game, player game.Player) error {
@@ -127,7 +129,7 @@ func BlitzToDutch(g game.Game, player game.Player, dutchIndex int) error {
 	if len(blitz) == 0 {
 		return errors.New("blitz pile is empty")
 	}
-	card := topCard(blitz)
+	card := TopCard(blitz)
 	dutch := g.DutchPiles()
 	pile := dutch[dutchIndex]
 	if err := validateDutchMove(card, pile); err != nil {
@@ -145,7 +147,7 @@ func PostToDutch(g game.Game, player game.Player, postIndex int, dutchIndex int)
 	if len(pile) == 0 {
 		return errors.New("post pile is empty")
 	}
-	card := topCard(pile)
+	card := TopCard(pile)
 	dutch := g.DutchPiles()
 	dutchPile := dutch[dutchIndex]
 	if err := validateDutchMove(card, dutchPile); err != nil {
@@ -163,7 +165,7 @@ func WoodPileToDutch(g game.Game, player game.Player, dutchIndex int) error {
 	if len(wood) == 0 {
 		return errors.New("wood pile is empty")
 	}
-	card := topCard(wood)
+	card := TopCard(wood)
 	dutch := g.DutchPiles()
 	pile := dutch[dutchIndex]
 	if err := validateDutchMove(card, pile); err != nil {
@@ -183,11 +185,11 @@ func validatePostMove(card game.Card, postPile []game.Card) error {
 	if len(postPile) == 0 {
 		return nil
 	}
-	topCard := topCard(postPile)
-	if !cardsAreConsecutive(topCard, card) {
+	TopCard := TopCard(postPile)
+	if !cardsAreConsecutive(TopCard, card) {
 		return errors.New("card must be next descending number")
 	}
-	if !colorsAreAlternating(card, topCard) {
+	if !colorsAreAlternating(card, TopCard) {
 		return errors.New("colors must alternate")
 	}
 	return nil
@@ -198,7 +200,7 @@ func BlitzToPost(g game.Game, player game.Player, postIndex int) error {
 	if len(blitz) == 0 {
 		return errors.New("blitz pile is empty")
 	}
-	card := topCard(blitz)
+	card := TopCard(blitz)
 	postPiles := g.PostPiles(player)
 	pile := postPiles[postIndex]
 	if err := validatePostMove(card, pile); err != nil {
@@ -216,7 +218,7 @@ func WoodPileToPost(g game.Game, player game.Player, postIndex int) error {
 	if len(wood) == 0 {
 		return errors.New("wood pile is empty")
 	}
-	card := topCard(wood)
+	card := TopCard(wood)
 	postPiles := g.PostPiles(player)
 	pile := postPiles[postIndex]
 	if err := validatePostMove(card, pile); err != nil {
@@ -235,7 +237,7 @@ func PostToPost(g game.Game, player game.Player, fromIndex int, toIndex int) err
 	if len(fromPile) == 0 {
 		return errors.New("source post pile is empty")
 	}
-	card := topCard(fromPile)
+	card := TopCard(fromPile)
 	toPile := postPiles[toIndex]
 	if err := validatePostMove(card, toPile); err != nil {
 		return err
