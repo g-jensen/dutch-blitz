@@ -10,6 +10,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTopCard_ReturnsEmptyCardIfNoCards(t *testing.T) {
+	assert.Equal(t, game.Card{}, sut.TopCard([]game.Card{}))
+}
+
+func TestTopCard_ReturnsCard(t *testing.T) {
+	card := game.Card{Number: 0, Color: 0, Player: 0}
+	assert.Equal(t, card, sut.TopCard([]game.Card{card}))
+}
+
+func TestTopCard_ReturnsLastCard(t *testing.T) {
+	card1 := game.Card{Number: 0, Color: 0, Player: 0}
+	card2 := game.Card{Number: 1, Color: 0, Player: 0}
+	assert.Equal(t, card2, sut.TopCard([]game.Card{card1, card2}))
+}
+
 func TestInit_ReturnsError_WhenZeroPlayers(t *testing.T) {
 	_, err := testutil.GameSetup(0)
 	assert.Error(t, err)
