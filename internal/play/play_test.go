@@ -108,9 +108,8 @@ func TestAddToWoodPile_MovesAllCards_WhenHandHasFewerThan3(t *testing.T) {
 	player := game.Player(0)
 	s.SetHand(player, []game.Card{{Number: 1}, {Number: 2}})
 
-	err = AddToWoodPile(s, player)
+	AddToWoodPile(s, player)
 
-	require.NoError(t, err)
 	assert.Len(t, s.WoodPile(player), 2)
 	assert.Len(t, s.Hand(player), 0)
 	assert.Equal(t, game.Card{Number: 1}, s.WoodPile(player)[0])
@@ -452,8 +451,7 @@ func TestResetWoodPile_RestoresHandToInitialState_AfterEmptyingHand(t *testing.T
 	initialHand := s.Hand(player)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 
 	err = ResetWoodPile(s, player)
@@ -494,8 +492,7 @@ func TestResetWoodPile_MakesPlayerCyclable(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 
 	err = ResetWoodPile(s, player)
@@ -510,8 +507,7 @@ func TestCycleHand_ReturnsError_AfterPlayingCardSinceReset(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -531,8 +527,7 @@ func TestCycleHand_Succeeds_AfterResettingTwice(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -542,8 +537,7 @@ func TestCycleHand_Succeeds_AfterResettingTwice(t *testing.T) {
 	require.NoError(t, err)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -559,8 +553,7 @@ func TestCycleHand_ReturnsError_AfterPostToDutch(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -582,8 +575,7 @@ func TestCycleHand_ReturnsError_AfterWoodPileToDutch(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -603,8 +595,7 @@ func TestCycleHand_ReturnsError_AfterBlitzToPost(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -627,8 +618,7 @@ func TestCycleHand_ReturnsError_AfterWoodPileToPost(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -651,8 +641,7 @@ func TestCycleHand_ReturnsError_AfterPostToPost(t *testing.T) {
 	player := game.Player(0)
 
 	for len(s.Hand(player)) > 0 {
-		err = AddToWoodPile(s, player)
-		require.NoError(t, err)
+		AddToWoodPile(s, player)
 	}
 	err = ResetWoodPile(s, player)
 	require.NoError(t, err)
@@ -844,8 +833,7 @@ func TestAddToWoodPile_LastCardDealtIsAtEnd(t *testing.T) {
 	require.NoError(t, err)
 	player := game.Player(0)
 
-	err = AddToWoodPile(g, player)
-	require.NoError(t, err)
+	AddToWoodPile(g, player)
 
 	wood := g.WoodPile(player)
 	assert.Len(t, wood, 3)
