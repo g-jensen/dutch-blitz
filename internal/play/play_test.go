@@ -3,22 +3,12 @@ package play
 import (
 	"dutch_blitz/internal/game"
 	memorygame "dutch_blitz/internal/game/memorygame"
+	"dutch_blitz/internal/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func identity(cards []game.Card) []game.Card {
-	return cards
-}
-
-func rotateOne(cards []game.Card) []game.Card {
-	if len(cards) == 0 {
-		return cards
-	}
-	return append(cards[1:], cards[0])
-}
 
 func setup(playerCount int, shuffleFn func([]game.Card) []game.Card) (game.Game, error) {
 	g := memorygame.New(playerCount)
@@ -39,28 +29,28 @@ func TestInit_ReturnsError_WhenFivePlayers(t *testing.T) {
 }
 
 func TestInit_ReturnsTwoPlayers(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 
 	require.NoError(t, err)
 	assert.Len(t, s.Players(), 2)
 }
 
 func TestInit_ReturnsEightDutchPiles(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 
 	require.NoError(t, err)
 	assert.Len(t, s.DutchPiles(), 8)
 }
 
 func TestInit_TwoPlayers_EachHaveFivePostPiles(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 
 	require.NoError(t, err)
 	assert.Len(t, s.PostPiles(game.Player(0)), 5)
 }
 
 func TestInit_TwoPlayers_BlitzPileHasTenCards(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 
 	require.NoError(t, err)
 	assert.Len(t, s.BlitzPile(game.Player(0)), 10)
@@ -68,7 +58,7 @@ func TestInit_TwoPlayers_BlitzPileHasTenCards(t *testing.T) {
 }
 
 func TestInit_TwoPlayers_HandHas25Cards(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 
 	require.NoError(t, err)
 	assert.Len(t, s.Hand(game.Player(0)), 25)
@@ -76,7 +66,7 @@ func TestInit_TwoPlayers_HandHas25Cards(t *testing.T) {
 }
 
 func TestInit_TwoPlayers_PostPileHasOneCard(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 
 	require.NoError(t, err)
 	assert.Len(t, s.PostPiles(game.Player(0))[0], 1)
@@ -84,14 +74,14 @@ func TestInit_TwoPlayers_PostPileHasOneCard(t *testing.T) {
 }
 
 func TestInit_ThreePlayers_EachHaveThreePostPiles(t *testing.T) {
-	s, err := setup(3, identity)
+	s, err := setup(3, testutil.Identity)
 
 	require.NoError(t, err)
 	assert.Len(t, s.PostPiles(game.Player(0)), 3)
 }
 
 func TestInit_ShufflesEachPlayerDeck(t *testing.T) {
-	s, err := setup(2, rotateOne)
+	s, err := setup(2, testutil.RotateOne)
 
 	require.NoError(t, err)
 	firstPostPile := s.PostPiles(game.Player(0))[0]
@@ -99,7 +89,7 @@ func TestInit_ShufflesEachPlayerDeck(t *testing.T) {
 }
 
 func TestAddToWoodPile_MovesTop3CardsFromHandToWoodPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -107,13 +97,13 @@ func TestAddToWoodPile_MovesTop3CardsFromHandToWoodPile(t *testing.T) {
 
 	assert.Len(t, s.WoodPile(player), 3)
 	assert.Len(t, s.Hand(player), 22)
-	assert.Equal(t, game.Card{Number: 8, Color: 1, Player: 0}, s.WoodPile(player)[0])
+	assert.Equal(t, game.Card{Number: 6, Color: 1, Player: 0}, s.WoodPile(player)[0])
 	assert.Equal(t, game.Card{Number: 7, Color: 1, Player: 0}, s.WoodPile(player)[1])
-	assert.Equal(t, game.Card{Number: 6, Color: 1, Player: 0}, s.WoodPile(player)[2])
+	assert.Equal(t, game.Card{Number: 8, Color: 1, Player: 0}, s.WoodPile(player)[2])
 }
 
 func TestAddToWoodPile_MovesAllCards_WhenHandHasFewerThan3(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetHand(player, []game.Card{{Number: 1}, {Number: 2}})
@@ -123,30 +113,33 @@ func TestAddToWoodPile_MovesAllCards_WhenHandHasFewerThan3(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, s.WoodPile(player), 2)
 	assert.Len(t, s.Hand(player), 0)
-	assert.Equal(t, game.Card{Number: 2}, s.WoodPile(player)[0])
-	assert.Equal(t, game.Card{Number: 1}, s.WoodPile(player)[1])
+	assert.Equal(t, game.Card{Number: 1}, s.WoodPile(player)[0])
+	assert.Equal(t, game.Card{Number: 2}, s.WoodPile(player)[1])
 }
 
-func TestResetWoodPile_MovesWoodPileToHand(t *testing.T) {
-	s, err := setup(2, identity)
+func TestResetWoodPile_TransfersWithoutReversing(t *testing.T) {
+	g, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
-	woodCards := []game.Card{{Number: 1}, {Number: 2}, {Number: 3}}
-	s.SetHand(player, []game.Card{})
-	s.SetWoodPile(player, woodCards)
+	woodCards := []game.Card{
+		{Number: 1, Color: 0, Player: player},
+		{Number: 2, Color: 0, Player: player},
+		{Number: 3, Color: 0, Player: player},
+	}
+	g.SetWoodPile(player, woodCards)
+	g.SetHand(player, []game.Card{})
 
-	err = ResetWoodPile(s, player)
+	err = ResetWoodPile(g, player)
 
 	require.NoError(t, err)
-	assert.Len(t, s.Hand(player), 3)
-	assert.Len(t, s.WoodPile(player), 0)
-	assert.Equal(t, game.Card{Number: 3}, s.Hand(player)[0])
-	assert.Equal(t, game.Card{Number: 2}, s.Hand(player)[1])
-	assert.Equal(t, game.Card{Number: 1}, s.Hand(player)[2])
+	hand := g.Hand(player)
+	assert.Equal(t, 1, hand[0].Number)
+	assert.Equal(t, 2, hand[1].Number)
+	assert.Equal(t, 3, hand[2].Number)
 }
 
 func TestResetWoodPile_ReturnsError_WhenHandNotEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetWoodPile(player, []game.Card{{Number: 1}, {Number: 2}, {Number: 3}})
@@ -157,7 +150,7 @@ func TestResetWoodPile_ReturnsError_WhenHandNotEmpty(t *testing.T) {
 }
 
 func TestBlitzToDutch_MovesTopBlitzCardToDutchPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetBlitzPile(player, []game.Card{{Number: 1, Color: 0, Player: player}})
@@ -171,7 +164,7 @@ func TestBlitzToDutch_MovesTopBlitzCardToDutchPile(t *testing.T) {
 }
 
 func TestBlitzToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetBlitzPile(player, []game.Card{{Number: 2, Color: 0, Player: player}})
@@ -182,7 +175,7 @@ func TestBlitzToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T) {
 }
 
 func TestBlitzToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	dutchPiles := s.DutchPiles()
@@ -195,7 +188,7 @@ func TestBlitzToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing
 }
 
 func TestBlitzToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	dutchPiles := s.DutchPiles()
@@ -208,7 +201,7 @@ func TestBlitzToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T) {
 }
 
 func TestWoodPileToDutch_MovesTopWoodCardToDutchPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetWoodPile(player, []game.Card{{Number: 1, Color: 0, Player: player}})
@@ -222,7 +215,7 @@ func TestWoodPileToDutch_MovesTopWoodCardToDutchPile(t *testing.T) {
 }
 
 func TestPostToDutch_MovesTopPostCardToDutchPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -238,7 +231,7 @@ func TestPostToDutch_MovesTopPostCardToDutchPile(t *testing.T) {
 }
 
 func TestWoodPileToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetWoodPile(player, []game.Card{{Number: 2, Color: 0, Player: player}})
@@ -249,7 +242,7 @@ func TestWoodPileToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T)
 }
 
 func TestWoodPileToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	dutchPiles := s.DutchPiles()
@@ -262,7 +255,7 @@ func TestWoodPileToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *test
 }
 
 func TestWoodPileToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	dutchPiles := s.DutchPiles()
@@ -275,7 +268,7 @@ func TestWoodPileToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T
 }
 
 func TestPostToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -288,7 +281,7 @@ func TestPostToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T) {
 }
 
 func TestPostToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	dutchPiles := s.DutchPiles()
@@ -303,7 +296,7 @@ func TestPostToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing.
 }
 
 func TestPostToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	dutchPiles := s.DutchPiles()
@@ -318,7 +311,7 @@ func TestPostToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T) {
 }
 
 func TestBlitzToPost_MovesTopBlitzCardToPostPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetBlitzPile(player, []game.Card{{Number: 5, Color: 0, Player: player}})
@@ -335,7 +328,7 @@ func TestBlitzToPost_MovesTopBlitzCardToPostPile(t *testing.T) {
 }
 
 func TestBlitzToPost_ReturnsError_WhenCardIsNotNextDescendingNumber(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -349,7 +342,7 @@ func TestBlitzToPost_ReturnsError_WhenCardIsNotNextDescendingNumber(t *testing.T
 }
 
 func TestBlitzToPost_ReturnsError_WhenColorDoesNotAlternate(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -363,7 +356,7 @@ func TestBlitzToPost_ReturnsError_WhenColorDoesNotAlternate(t *testing.T) {
 }
 
 func TestWoodPileToPost_MovesTopWoodCardToPostPile(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetWoodPile(player, []game.Card{{Number: 5, Color: 0, Player: player}})
@@ -380,7 +373,7 @@ func TestWoodPileToPost_MovesTopWoodCardToPostPile(t *testing.T) {
 }
 
 func TestWoodPileToPost_ReturnsError_WhenCardIsNotNextDescendingNumber(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -394,7 +387,7 @@ func TestWoodPileToPost_ReturnsError_WhenCardIsNotNextDescendingNumber(t *testin
 }
 
 func TestWoodPileToPost_ReturnsError_WhenColorDoesNotAlternate(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -408,7 +401,7 @@ func TestWoodPileToPost_ReturnsError_WhenColorDoesNotAlternate(t *testing.T) {
 }
 
 func TestPostToPost_MovesTopCardFromOnePostPileToAnother(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -425,7 +418,7 @@ func TestPostToPost_MovesTopCardFromOnePostPileToAnother(t *testing.T) {
 }
 
 func TestPostToPost_ReturnsError_WhenCardIsNotNextDescendingNumber(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -439,7 +432,7 @@ func TestPostToPost_ReturnsError_WhenCardIsNotNextDescendingNumber(t *testing.T)
 }
 
 func TestPostToPost_ReturnsError_WhenColorDoesNotAlternate(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -453,7 +446,7 @@ func TestPostToPost_ReturnsError_WhenColorDoesNotAlternate(t *testing.T) {
 }
 
 func TestResetWoodPile_RestoresHandToInitialState_AfterEmptyingHand(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	initialHand := s.Hand(player)
@@ -471,7 +464,7 @@ func TestResetWoodPile_RestoresHandToInitialState_AfterEmptyingHand(t *testing.T
 }
 
 func TestCycleHand_MovesFirstCardToEnd(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetCyclable(player, true)
@@ -486,7 +479,7 @@ func TestCycleHand_MovesFirstCardToEnd(t *testing.T) {
 }
 
 func TestCycleHand_ReturnsError_WhenPlayerNotCyclable(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -496,7 +489,7 @@ func TestCycleHand_ReturnsError_WhenPlayerNotCyclable(t *testing.T) {
 }
 
 func TestResetWoodPile_MakesPlayerCyclable(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -512,7 +505,7 @@ func TestResetWoodPile_MakesPlayerCyclable(t *testing.T) {
 }
 
 func TestCycleHand_ReturnsError_AfterPlayingCardSinceReset(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -533,7 +526,7 @@ func TestCycleHand_ReturnsError_AfterPlayingCardSinceReset(t *testing.T) {
 }
 
 func TestCycleHand_Succeeds_AfterResettingTwice(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -561,7 +554,7 @@ func TestCycleHand_Succeeds_AfterResettingTwice(t *testing.T) {
 }
 
 func TestCycleHand_ReturnsError_AfterPostToDutch(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -584,7 +577,7 @@ func TestCycleHand_ReturnsError_AfterPostToDutch(t *testing.T) {
 }
 
 func TestCycleHand_ReturnsError_AfterWoodPileToDutch(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -605,7 +598,7 @@ func TestCycleHand_ReturnsError_AfterWoodPileToDutch(t *testing.T) {
 }
 
 func TestCycleHand_ReturnsError_AfterBlitzToPost(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -629,7 +622,7 @@ func TestCycleHand_ReturnsError_AfterBlitzToPost(t *testing.T) {
 }
 
 func TestCycleHand_ReturnsError_AfterWoodPileToPost(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -653,7 +646,7 @@ func TestCycleHand_ReturnsError_AfterWoodPileToPost(t *testing.T) {
 }
 
 func TestCycleHand_ReturnsError_AfterPostToPost(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -677,7 +670,7 @@ func TestCycleHand_ReturnsError_AfterPostToPost(t *testing.T) {
 }
 
 func TestHasWon_ReturnsTrue_WhenBlitzPileEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetBlitzPile(player, []game.Card{})
@@ -688,7 +681,7 @@ func TestHasWon_ReturnsTrue_WhenBlitzPileEmpty(t *testing.T) {
 }
 
 func TestHasWon_ReturnsFalse_WhenBlitzPileNotEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -698,7 +691,7 @@ func TestHasWon_ReturnsFalse_WhenBlitzPileNotEmpty(t *testing.T) {
 }
 
 func TestBlitzToDutch_ReturnsError_WhenBlitzPileIsEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetBlitzPile(player, []game.Card{})
@@ -709,7 +702,7 @@ func TestBlitzToDutch_ReturnsError_WhenBlitzPileIsEmpty(t *testing.T) {
 }
 
 func TestPostToDutch_ReturnsError_WhenPostPileIsEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -722,7 +715,7 @@ func TestPostToDutch_ReturnsError_WhenPostPileIsEmpty(t *testing.T) {
 }
 
 func TestWoodPileToDutch_ReturnsError_WhenWoodPileIsEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -732,7 +725,7 @@ func TestWoodPileToDutch_ReturnsError_WhenWoodPileIsEmpty(t *testing.T) {
 }
 
 func TestBlitzToPost_ReturnsError_WhenBlitzPileIsEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	s.SetBlitzPile(player, []game.Card{})
@@ -746,7 +739,7 @@ func TestBlitzToPost_ReturnsError_WhenBlitzPileIsEmpty(t *testing.T) {
 }
 
 func TestWoodPileToPost_ReturnsError_WhenWoodPileIsEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 
@@ -756,7 +749,7 @@ func TestWoodPileToPost_ReturnsError_WhenWoodPileIsEmpty(t *testing.T) {
 }
 
 func TestPostToPost_ReturnsError_WhenSourcePostPileIsEmpty(t *testing.T) {
-	s, err := setup(2, identity)
+	s, err := setup(2, testutil.Identity)
 	require.NoError(t, err)
 	player := game.Player(0)
 	postPiles := s.PostPiles(player)
@@ -766,4 +759,97 @@ func TestPostToPost_ReturnsError_WhenSourcePostPileIsEmpty(t *testing.T) {
 	err = PostToPost(s, player, 0, 1)
 
 	assert.Error(t, err)
+}
+
+func TestBlitzToDutch_TakesFromLastElement(t *testing.T) {
+	g, err := setup(2, testutil.Identity)
+	require.NoError(t, err)
+	player := game.Player(0)
+
+	g.SetBlitzPile(player, []game.Card{
+		{Number: 5, Color: 0, Player: player},
+		{Number: 1, Color: 0, Player: player},
+	})
+
+	err = BlitzToDutch(g, player, 0)
+
+	require.NoError(t, err)
+	assert.Len(t, g.BlitzPile(player), 1)
+	assert.Equal(t, 5, g.BlitzPile(player)[0].Number)
+}
+
+func TestBlitzToPost_TakesFromLastElement(t *testing.T) {
+	g, err := setup(2, testutil.Identity)
+	require.NoError(t, err)
+	player := game.Player(0)
+
+	g.SetBlitzPile(player, []game.Card{
+		{Number: 3, Color: 0, Player: player},
+		{Number: 7, Color: 0, Player: player},
+	})
+
+	postPiles := g.PostPiles(player)
+	postPiles[0] = []game.Card{}
+	g.SetPostPiles(player, postPiles)
+
+	err = BlitzToPost(g, player, 0)
+
+	require.NoError(t, err)
+	assert.Len(t, g.BlitzPile(player), 1)
+	assert.Equal(t, 3, g.BlitzPile(player)[0].Number)
+	assert.Equal(t, 7, g.PostPiles(player)[0][0].Number)
+}
+
+func TestWoodPileToDutch_TakesFromLastElement(t *testing.T) {
+	g, err := setup(2, testutil.Identity)
+	require.NoError(t, err)
+	player := game.Player(0)
+
+	g.SetWoodPile(player, []game.Card{
+		{Number: 5, Color: 0, Player: player},
+		{Number: 1, Color: 0, Player: player},
+	})
+
+	err = WoodPileToDutch(g, player, 0)
+
+	require.NoError(t, err)
+	assert.Len(t, g.WoodPile(player), 1)
+	assert.Equal(t, 5, g.WoodPile(player)[0].Number)
+}
+
+func TestWoodPileToPost_TakesFromLastElement(t *testing.T) {
+	g, err := setup(2, testutil.Identity)
+	require.NoError(t, err)
+	player := game.Player(0)
+
+	g.SetWoodPile(player, []game.Card{
+		{Number: 3, Color: 0, Player: player},
+		{Number: 7, Color: 0, Player: player},
+	})
+
+	postPiles := g.PostPiles(player)
+	postPiles[0] = []game.Card{}
+	g.SetPostPiles(player, postPiles)
+
+	err = WoodPileToPost(g, player, 0)
+
+	require.NoError(t, err)
+	assert.Len(t, g.WoodPile(player), 1)
+	assert.Equal(t, 3, g.WoodPile(player)[0].Number)
+	assert.Equal(t, 7, g.PostPiles(player)[0][0].Number)
+}
+
+func TestAddToWoodPile_LastCardDealtIsAtEnd(t *testing.T) {
+	g, err := setup(2, testutil.Identity)
+	require.NoError(t, err)
+	player := game.Player(0)
+
+	err = AddToWoodPile(g, player)
+	require.NoError(t, err)
+
+	wood := g.WoodPile(player)
+	assert.Len(t, wood, 3)
+
+	assert.Equal(t, 8, wood[len(wood)-1].Number)
+	assert.Equal(t, 6, wood[0].Number)
 }

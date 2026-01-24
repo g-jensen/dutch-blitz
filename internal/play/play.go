@@ -88,13 +88,10 @@ func Setup(g game.Game, playerCount int, shuffleFn func([]game.Card) []game.Card
 func AddToWoodPile(g game.Game, player game.Player) error {
 	hand := g.Hand(player)
 	count := min(3, len(hand))
-	toMove := make([]game.Card, count)
-	for i := range count {
-		toMove[i] = hand[count-1-i]
-	}
+	toMove := hand[:count]
 	remaining := hand[count:]
 	wood := g.WoodPile(player)
-	newWood := append(toMove, wood...)
+	newWood := append(wood, toMove...)
 	g.SetWoodPile(player, newWood)
 	g.SetHand(player, remaining)
 	return nil
@@ -105,11 +102,7 @@ func ResetWoodPile(g game.Game, player game.Player) error {
 		return errors.New("hand not empty")
 	}
 	wood := g.WoodPile(player)
-	reversed := make([]game.Card, len(wood))
-	for i, c := range wood {
-		reversed[len(wood)-1-i] = c
-	}
-	g.SetHand(player, reversed)
+	g.SetHand(player, wood)
 	g.SetWoodPile(player, []game.Card{})
 	g.SetCyclable(player, true)
 	g.SetHasPlayedThisReset(player, false)
@@ -134,13 +127,13 @@ func BlitzToDutch(g game.Game, player game.Player, dutchIndex int) error {
 	if len(blitz) == 0 {
 		return errors.New("blitz pile is empty")
 	}
-	card := blitz[0]
+	card := topCard(blitz)
 	dutch := g.DutchPiles()
 	pile := dutch[dutchIndex]
 	if err := validateDutchMove(card, pile); err != nil {
 		return err
 	}
-	g.SetBlitzPile(player, blitz[1:])
+	g.SetBlitzPile(player, blitz[:len(blitz)-1])
 	dutch[dutchIndex] = append(dutch[dutchIndex], card)
 	g.SetHasPlayedThisReset(player, true)
 	return nil
@@ -152,7 +145,7 @@ func PostToDutch(g game.Game, player game.Player, postIndex int, dutchIndex int)
 	if len(pile) == 0 {
 		return errors.New("post pile is empty")
 	}
-	card := pile[len(pile)-1]
+	card := topCard(pile)
 	dutch := g.DutchPiles()
 	dutchPile := dutch[dutchIndex]
 	if err := validateDutchMove(card, dutchPile); err != nil {
@@ -170,13 +163,13 @@ func WoodPileToDutch(g game.Game, player game.Player, dutchIndex int) error {
 	if len(wood) == 0 {
 		return errors.New("wood pile is empty")
 	}
-	card := wood[0]
+	card := topCard(wood)
 	dutch := g.DutchPiles()
 	pile := dutch[dutchIndex]
 	if err := validateDutchMove(card, pile); err != nil {
 		return err
 	}
-	g.SetWoodPile(player, wood[1:])
+	g.SetWoodPile(player, wood[:len(wood)-1])
 	dutch[dutchIndex] = append(dutch[dutchIndex], card)
 	g.SetHasPlayedThisReset(player, true)
 	return nil
@@ -205,13 +198,13 @@ func BlitzToPost(g game.Game, player game.Player, postIndex int) error {
 	if len(blitz) == 0 {
 		return errors.New("blitz pile is empty")
 	}
-	card := blitz[0]
+	card := topCard(blitz)
 	postPiles := g.PostPiles(player)
 	pile := postPiles[postIndex]
 	if err := validatePostMove(card, pile); err != nil {
 		return err
 	}
-	g.SetBlitzPile(player, blitz[1:])
+	g.SetBlitzPile(player, blitz[:len(blitz)-1])
 	postPiles[postIndex] = append(postPiles[postIndex], card)
 	g.SetPostPiles(player, postPiles)
 	g.SetHasPlayedThisReset(player, true)
@@ -223,13 +216,13 @@ func WoodPileToPost(g game.Game, player game.Player, postIndex int) error {
 	if len(wood) == 0 {
 		return errors.New("wood pile is empty")
 	}
-	card := wood[0]
+	card := topCard(wood)
 	postPiles := g.PostPiles(player)
 	pile := postPiles[postIndex]
 	if err := validatePostMove(card, pile); err != nil {
 		return err
 	}
-	g.SetWoodPile(player, wood[1:])
+	g.SetWoodPile(player, wood[:len(wood)-1])
 	postPiles[postIndex] = append(postPiles[postIndex], card)
 	g.SetPostPiles(player, postPiles)
 	g.SetHasPlayedThisReset(player, true)
@@ -242,7 +235,7 @@ func PostToPost(g game.Game, player game.Player, fromIndex int, toIndex int) err
 	if len(fromPile) == 0 {
 		return errors.New("source post pile is empty")
 	}
-	card := fromPile[len(fromPile)-1]
+	card := topCard(fromPile)
 	toPile := postPiles[toIndex]
 	if err := validatePostMove(card, toPile); err != nil {
 		return err
