@@ -2,7 +2,7 @@ package play
 
 import (
 	"dutch_blitz/internal/game"
-	memorygame "dutch_blitz/internal/game/memory_game"
+	memorygame "dutch_blitz/internal/game/memorygame"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
