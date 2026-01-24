@@ -5,6 +5,8 @@ import (
 	"errors"
 )
 
+type ShuffleFn func([]game.Card) []game.Card
+
 func generateDeck(player game.Player) []game.Card {
 	deck := make([]game.Card, 0, 40)
 	for color := range 4 {
@@ -74,7 +76,7 @@ func dealCardsToPlayer(g game.Game, player game.Player, deck []game.Card, postPi
 	g.SetHand(player, deck[postPileCount+10:])
 }
 
-func Setup(g game.Game, playerCount int, shuffleFn func([]game.Card) []game.Card) error {
+func Setup(g game.Game, playerCount int, shuffleFn ShuffleFn) error {
 	if err := validatePlayerCount(playerCount); err != nil {
 		return err
 	}
