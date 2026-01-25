@@ -6,14 +6,14 @@ type BadPlayerCountError struct {
 	MaxPlayerCount int
 }
 
-func New(playerCount int, minPlayerCount int, maxPlayerCount int) BadPlayerCountError {
-	return BadPlayerCountError{
+func New(playerCount int, minPlayerCount int, maxPlayerCount int) *BadPlayerCountError {
+	return &BadPlayerCountError{
 		PlayerCount:    playerCount,
 		MinPlayerCount: minPlayerCount,
 		MaxPlayerCount: maxPlayerCount,
 	}
 }
 
-func (e BadPlayerCountError) Error() string {
+func (e *BadPlayerCountError) Error() string {
 	return "invalid player count"
 }
