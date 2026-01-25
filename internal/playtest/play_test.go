@@ -145,6 +145,7 @@ func TestResetWoodPile_ReturnsError_WhenHandNotEmpty(t *testing.T) {
 	err := sut.ResetWoodPile(g, player)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestBlitzToDutch_MovesTopBlitzCardToDutchPile(t *testing.T) {
@@ -168,6 +169,7 @@ func TestBlitzToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T) {
 	err := sut.BlitzToDutch(g, player, 0)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestBlitzToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing.T) {
@@ -180,6 +182,7 @@ func TestBlitzToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing
 	err := sut.BlitzToDutch(g, player, 0)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestBlitzToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T) {
@@ -192,6 +195,7 @@ func TestBlitzToDutch_ReturnsError_WhenCardColorDoesNotMatchPile(t *testing.T) {
 	err := sut.BlitzToDutch(g, player, 0)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestWoodPileToDutch_MovesTopWoodCardToDutchPile(t *testing.T) {
@@ -230,6 +234,7 @@ func TestWoodPileToDutch_ReturnsError_WhenPlayingNonOneToEmptyPile(t *testing.T)
 	err := sut.WoodPileToDutch(g, player, 0)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestWoodPileToDutch_ReturnsError_WhenCardIsNotNextConsecutiveNumber(t *testing.T) {
@@ -323,19 +328,21 @@ func TestBlitzToPost_ReturnsError_WhenCardIsNotNextDescendingNumber(t *testing.T
 	err := sut.BlitzToPost(g, player, 0)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestBlitzToPost_ReturnsError_WhenColorDoesNotAlternate(t *testing.T) {
 	g := testutil.GameSetupNoError(2, t)
 	player := game.Player(0)
 	postPiles := g.PostPiles(player)
-	postPiles[0] = []game.Card{{Number: 5, Color: 0, Player: player}}
+	postPiles[0] = []game.Card{{Number: 4, Color: 0, Player: player}}
 	g.SetPostPiles(player, postPiles)
-	g.SetBlitzPile(player, []game.Card{{Number: 4, Color: 2, Player: player}})
+	g.SetBlitzPile(player, []game.Card{{Number: 5, Color: 2, Player: player}})
 
 	err := sut.BlitzToPost(g, player, 0)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestWoodPileToPost_MovesTopWoodCardToPostPile(t *testing.T) {
@@ -457,6 +464,7 @@ func TestCycleHand_ReturnsError_WhenPlayerNotCyclable(t *testing.T) {
 	err := sut.CycleHand(g, player)
 
 	assert.Error(t, err)
+	assert.Equal(t, errors.BadAction(), err)
 }
 
 func TestResetWoodPile_MakesPlayerCyclable(t *testing.T) {

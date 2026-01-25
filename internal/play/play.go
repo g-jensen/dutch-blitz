@@ -52,17 +52,17 @@ func colorsMatch(card1 game.Card, card2 game.Card) bool {
 
 func validateDutchMove(card game.Card, dutchPile []game.Card) error {
 	if len(dutchPile) == 0 && card.Number != 1 {
-		return errors.New("must play 1 to empty pile")
+		return errorspkg.BadAction()
 	}
 	if len(dutchPile) == 0 {
 		return nil
 	}
 	TopCard := TopCard(dutchPile)
 	if !cardsAreConsecutive(TopCard, card) {
-		return errors.New("card must be next consecutive number")
+		return errorspkg.BadAction()
 	}
 	if !colorsMatch(card, TopCard) {
-		return errors.New("card color must match pile")
+		return errorspkg.BadAction()
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func AddToWoodPile(g game.Game, player game.Player) {
 
 func ResetWoodPile(g game.Game, player game.Player) error {
 	if len(g.Hand(player)) > 0 {
-		return errors.New("hand not empty")
+		return errorspkg.BadAction()
 	}
 	wood := g.WoodPile(player)
 	g.SetHand(player, wood)
@@ -181,7 +181,7 @@ func WoodPileToDutch(g game.Game, player game.Player, dutchIndex int) error {
 }
 
 func colorsAreAlternating(card1 game.Card, card2 game.Card) bool {
-	return card1.Color%2 == card2.Color%2
+	return card1.Color%2 != card2.Color%2
 }
 
 func validatePostMove(card game.Card, postPile []game.Card) error {
@@ -190,10 +190,10 @@ func validatePostMove(card game.Card, postPile []game.Card) error {
 	}
 	TopCard := TopCard(postPile)
 	if !cardsAreConsecutive(TopCard, card) {
-		return errors.New("card must be next descending number")
+		return errorspkg.BadAction()
 	}
 	if !colorsAreAlternating(card, TopCard) {
-		return errors.New("colors must alternate")
+		return errorspkg.BadAction()
 	}
 	return nil
 }
