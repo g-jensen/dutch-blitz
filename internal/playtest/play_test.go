@@ -3,12 +3,16 @@ package playtest
 import (
 	"dutch_blitz/internal/game"
 	sut "dutch_blitz/internal/play"
+	"dutch_blitz/internal/play/errors/badplayercount"
 	"dutch_blitz/internal/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const minPlayers = 2
+const maxPlayers = 4
 
 func TestTopCard_ReturnsEmptyCardIfNoCards(t *testing.T) {
 	assert.Equal(t, game.Card{}, sut.TopCard([]game.Card{}))
@@ -28,11 +32,19 @@ func TestTopCard_ReturnsLastCard(t *testing.T) {
 func TestInit_ReturnsError_WhenZeroPlayers(t *testing.T) {
 	_, err := testutil.GameSetup(0)
 	assert.Error(t, err)
+	assert.Equal(t, badplayercount.New(0, minPlayers, maxPlayers), err)
 }
 
 func TestInit_ReturnsError_WhenFivePlayers(t *testing.T) {
 	_, err := testutil.GameSetup(5)
 	assert.Error(t, err)
+	assert.Equal(t, badplayercount.New(5, minPlayers, maxPlayers), err)
+}
+
+func TestInit_ReturnsError_WhenOnePlayer(t *testing.T) {
+	_, err := testutil.GameSetup(1)
+	assert.Error(t, err)
+	assert.Equal(t, badplayercount.New(1, minPlayers, maxPlayers), err)
 }
 
 func TestInit_ReturnsTwoPlayers(t *testing.T) {

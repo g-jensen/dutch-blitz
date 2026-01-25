@@ -2,10 +2,14 @@ package play
 
 import (
 	"dutch_blitz/internal/game"
+	"dutch_blitz/internal/play/errors/badplayercount"
 	"errors"
 )
 
 type ShuffleFn func([]game.Card) []game.Card
+
+const minPlayers = 2
+const maxPlayers = 4
 
 func generateDeck(player game.Player) []game.Card {
 	deck := make([]game.Card, 0, 40)
@@ -17,12 +21,9 @@ func generateDeck(player game.Player) []game.Card {
 	return deck
 }
 
-func validatePlayerCount(playerCount int) error {
-	if playerCount < 2 {
-		return errors.New("not enough players")
-	}
-	if playerCount > 4 {
-		return errors.New("too many players")
+func validatePlayerCount(playerCount int) *badplayercount.BadPlayerCountError {
+	if playerCount < minPlayers || playerCount > maxPlayers {
+		return badplayercount.New(playerCount, minPlayers, maxPlayers)
 	}
 	return nil
 }
