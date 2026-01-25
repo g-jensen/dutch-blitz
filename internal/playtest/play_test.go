@@ -3,7 +3,7 @@ package playtest
 import (
 	"dutch_blitz/internal/game"
 	sut "dutch_blitz/internal/play"
-	"dutch_blitz/internal/play/errors/badplayercount"
+	"dutch_blitz/internal/play/errors"
 	"dutch_blitz/internal/testutil"
 	"testing"
 
@@ -32,19 +32,19 @@ func TestTopCard_ReturnsLastCard(t *testing.T) {
 func TestInit_ReturnsError_WhenZeroPlayers(t *testing.T) {
 	_, err := testutil.GameSetup(0)
 	assert.Error(t, err)
-	assert.Equal(t, badplayercount.New(0, minPlayers, maxPlayers), err)
+	assert.Equal(t, errors.BadPlayerCount(0, minPlayers, maxPlayers), err)
 }
 
 func TestInit_ReturnsError_WhenFivePlayers(t *testing.T) {
 	_, err := testutil.GameSetup(5)
 	assert.Error(t, err)
-	assert.Equal(t, badplayercount.New(5, minPlayers, maxPlayers), err)
+	assert.Equal(t, errors.BadPlayerCount(5, minPlayers, maxPlayers), err)
 }
 
 func TestInit_ReturnsError_WhenOnePlayer(t *testing.T) {
 	_, err := testutil.GameSetup(1)
 	assert.Error(t, err)
-	assert.Equal(t, badplayercount.New(1, minPlayers, maxPlayers), err)
+	assert.Equal(t, errors.BadPlayerCount(1, minPlayers, maxPlayers), err)
 }
 
 func TestInit_ReturnsTwoPlayers(t *testing.T) {

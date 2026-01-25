@@ -2,7 +2,7 @@ package play
 
 import (
 	"dutch_blitz/internal/game"
-	"dutch_blitz/internal/play/errors/badplayercount"
+	errorspkg "dutch_blitz/internal/play/errors"
 	"errors"
 )
 
@@ -21,9 +21,9 @@ func generateDeck(player game.Player) []game.Card {
 	return deck
 }
 
-func validatePlayerCount(playerCount int) *badplayercount.BadPlayerCountError {
+func validatePlayerCount(playerCount int) error {
 	if playerCount < minPlayers || playerCount > maxPlayers {
-		return badplayercount.New(playerCount, minPlayers, maxPlayers)
+		return errorspkg.BadPlayerCount(playerCount, minPlayers, maxPlayers)
 	}
 	return nil
 }
